@@ -175,7 +175,7 @@
   
 
   <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="http://way5211.github.io/2025/09/14/%E6%B5%8B%E8%AF%95/">
+    <link itemprop="mainEntityOfPage" href="http://way5211.github.io/2025/09/14/suid/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/test_luffy.png">
@@ -193,7 +193,7 @@
     </span>
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
-          <a href="/2025/09/14/%E6%B5%8B%E8%AF%95/" class="post-title-link" itemprop="url">suid提权</a>
+          <a href="/2025/09/14/suid/" class="post-title-link" itemprop="url">suid提权</a>
         </h2>
 
         <div class="post-meta-container">
@@ -211,7 +211,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">更新于</span>
-      <time title="修改时间：2025-09-15 00:00:52" itemprop="dateModified" datetime="2025-09-15T00:00:52+08:00">2025-09-15</time>
+      <time title="修改时间：2025-09-15 00:09:06" itemprop="dateModified" datetime="2025-09-15T00:09:06+08:00">2025-09-15</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -233,7 +233,18 @@
     
     
     <div class="post-body" itemprop="articleBody">
-          <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"># Linux SUID 提权详解：原理、发现与利用</span><br><span class="line"></span><br><span class="line">## 什么是 SUID？</span><br><span class="line"></span><br><span class="line">SUID (Set User ID) 是 Linux 和 Unix 系统的一种特殊文件权限。它允许用户以**文件所有者的权限**来执行该文件，而不是以当前用户的权限。</span><br><span class="line"></span><br><span class="line">这是一种非常重要的功能，它允许普通用户临时获得更高权限来完成某些特定的任务。一个最经典的例子就是 `passwd` 命令。</span><br><span class="line"></span><br><span class="line">### 一个简单的例子：`/usr/bin/passwd`</span><br><span class="line"></span><br><span class="line">*   **文件所有者：** `root`</span><br><span class="line">*   **普通用户：** `alice`</span><br><span class="line">*   **正常情况：** `alice` 无法修改 `/etc/shadow` 文件（该文件存储用户密码哈希，只有 root 可读写）。</span><br><span class="line">*   **SUID 的作用：** `/usr/bin/passwd` 命令设置了 SUID 位，并且它的所有者是 `root`。当 `alice` 执行 `passwd` 命令时，这个进程会暂时以 `root` 权限运行，因此它可以成功地写入 `/etc/shadow` 文件来更改 `alice` 自己的密码。</span><br><span class="line"></span><br><span class="line">## 如何识别 SUID 文件？</span><br><span class="line"></span><br><span class="line">SUID 权限在文件权限位上用一个 `s` 来表示，它取代了通常的 `x`（执行）权限。</span><br><span class="line"></span><br><span class="line">### 通过 `ls -l` 查看</span><br><span class="line"></span><br><span class="line">查看 `/usr/bin/passwd` 的权限：</span><br><span class="line"></span><br><span class="line">```bash</span><br><span class="line">ls -l /usr/bin/passwd</span><br></pre></td></tr></table></figure>
+          <h1 id="Linux-SUID-提权详解：原理、发现与利用"><a href="#Linux-SUID-提权详解：原理、发现与利用" class="headerlink" title="Linux SUID 提权详解：原理、发现与利用"></a>Linux SUID 提权详解：原理、发现与利用</h1><h2 id="什么是-SUID？"><a href="#什么是-SUID？" class="headerlink" title="什么是 SUID？"></a>什么是 SUID？</h2><p>SUID (Set User ID) 是 Linux 和 Unix 系统的一种特殊文件权限。它允许用户以<strong>文件所有者的权限</strong>来执行该文件，而不是以当前用户的权限。</p>
+<p>这是一种非常重要的功能，它允许普通用户临时获得更高权限来完成某些特定的任务。一个最经典的例子就是 <code>passwd</code> 命令。</p>
+<h3 id="一个简单的例子：-usr-bin-passwd"><a href="#一个简单的例子：-usr-bin-passwd" class="headerlink" title="一个简单的例子：/usr/bin/passwd"></a>一个简单的例子：<code>/usr/bin/passwd</code></h3><ul>
+<li><strong>文件所有者：</strong> <code>root</code></li>
+<li><strong>普通用户：</strong> <code>alice</code></li>
+<li><strong>正常情况：</strong> <code>alice</code> 无法修改 <code>/etc/shadow</code> 文件（该文件存储用户密码哈希，只有 root 可读写）。</li>
+<li><strong>SUID 的作用：</strong> <code>/usr/bin/passwd</code> 命令设置了 SUID 位，并且它的所有者是 <code>root</code>。当 <code>alice</code> 执行 <code>passwd</code> 命令时，这个进程会暂时以 <code>root</code> 权限运行，因此它可以成功地写入 <code>/etc/shadow</code> 文件来更改 <code>alice</code> 自己的密码。</li>
+</ul>
+<h2 id="如何识别-SUID-文件？"><a href="#如何识别-SUID-文件？" class="headerlink" title="如何识别 SUID 文件？"></a>如何识别 SUID 文件？</h2><p>SUID 权限在文件权限位上用一个 <code>s</code> 来表示，它取代了通常的 <code>x</code>（执行）权限。</p>
+<h3 id="通过-ls-l-查看"><a href="#通过-ls-l-查看" class="headerlink" title="通过 ls -l 查看"></a>通过 <code>ls -l</code> 查看</h3><p>查看 <code>/usr/bin/passwd</code> 的权限：</p>
+<p>bash</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ls -l /usr/bin/passwd</span><br></pre></td></tr></table></figure>
 
 <p>输出结果：<br><code>-rwsr-xr-x 1 root root 63960 Feb  7  2020 /usr/bin/passwd</code></p>
 <p>注意所有者权限位中的 <code>rws</code>，这里的 <code>s</code> 就表示该文件设置了 SUID 位。</p>
